@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "RustyScissors"
+version = "1.0.0"
+dependencies = [
+ "image",
+ "rayon",
+ "walkdir",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -347,15 +356,6 @@ dependencies = [
  "flate2",
  "jpeg-decoder",
  "weezl",
-]
-
-[[package]]
-name = "trim"
-version = "0.1.0"
-dependencies = [
- "image",
- "rayon",
- "walkdir",
 ]
 
 [[package]]
