@@ -33,4 +33,4 @@ $ cargo run --release <input-path>
 We welcome contributions! For significant changes, please open an issue for discussion before making a pull request.
 
 ## License 📜
-This software is licensed under the GNU General Public License v3.0 (GPL-3.0). For more details, refer to [LICENSE.md](LICENSE.md).
+This software is licensed under the MIT  Massachusetts Institute of Technology (MIT). For more details, refer to [LICENSE](LICENSE.md).
