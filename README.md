@@ -2,8 +2,6 @@
 
 Rusty Scissors is a nifty little tool built with ❤️ in Rust, designed to trim the extra space around images in a jiffy, like a pair of smart scissors. It's fast, efficient, and does the job with precision! 🎯
 
-![Rusty Scissors](screenshot.png)
-
 ## Features 🌟
 - 🚀 Super fast image trimming thanks to the power of [Rayon](https://crates.io/crates/rayon)
 - 🖼 Supports a variety of image formats (JPEG, PNG, BMP, GIF, ICO, QOI, and many more)
