@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "RustyScissors"
-version = "1.0.0"
-dependencies = [
- "image",
- "rayon",
- "walkdir",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,6 +300,15 @@ checksum = "5ce3fb6ad83f861aac485e76e1985cd109d9a3713802152be56c3b1f0e0658ed"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
+]
+
+[[package]]
+name = "rusty_scissors"
+version = "1.0.0"
+dependencies = [
+ "image",
+ "rayon",
+ "walkdir",
 ]
 
 [[package]]

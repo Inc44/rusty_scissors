@@ -1,5 +1,5 @@
 [package]
-name = "RustyScissors"
+name = "rusty_scissors"
 version = "1.0.0"
 edition = "2021"
 
