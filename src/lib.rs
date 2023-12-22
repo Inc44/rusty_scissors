@@ -2,7 +2,9 @@ use image::{DynamicImage, GenericImageView};
 use rayon::prelude::*;
 use std::error::Error;
 use std::fmt;
+use std::fs;
 use std::path::Path;
+use std::time::SystemTime;
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -27,8 +29,19 @@ pub fn all_same(image: &DynamicImage, row: u32, col: u32, is_row: bool) -> bool 
     }
 }
 
-pub fn process_image(input_path: &Path, override_flag: bool) -> Result<(), Box<dyn Error>> {
+pub fn process_image(
+    input_path: &Path,
+    override_flag: bool,
+    keep_flag: bool,
+) -> Result<(), Box<dyn Error>> {
     let mut img = image::open(input_path)?;
+
+    let mut modified_date = SystemTime::now();
+
+    if keep_flag {
+        let metadata = fs::metadata(input_path)?;
+        modified_date = metadata.modified()?;
+    }
 
     let (mut left, mut right, mut top, mut bottom) = (0, img.width() - 1, 0, img.height() - 1);
 
@@ -83,10 +96,18 @@ pub fn process_image(input_path: &Path, override_flag: bool) -> Result<(), Box<d
 
     sub_img.save(&output_path)?;
 
+    if keep_flag {
+        filetime::set_file_times(&output_path, modified_date.into(), modified_date.into())?;
+    }
+
     Ok(())
 }
 
-pub fn process_directory(input_path: &Path, override_flag: bool) -> Result<(), AppError> {
+pub fn process_directory(
+    input_path: &Path,
+    override_flag: bool,
+    keep_flag: bool,
+) -> Result<(), AppError> {
     if input_path.is_dir() {
         let paths: Vec<_> = WalkDir::new(input_path)
             .into_iter()
@@ -95,12 +116,12 @@ pub fn process_directory(input_path: &Path, override_flag: bool) -> Result<(), A
             .map(|e| e.path().to_owned())
             .collect();
         paths.par_iter().for_each(|path| {
-            if let Err(e) = process_image(path, override_flag) {
+            if let Err(e) = process_image(path, override_flag, keep_flag) {
                 eprintln!("Failed to process {}: {}", path.display(), e);
             }
         });
     } else if input_path.is_file() {
-        if let Err(e) = process_image(input_path, override_flag) {
+        if let Err(e) = process_image(input_path, override_flag, keep_flag) {
             eprintln!("Failed to process {}: {}", input_path.display(), e);
         }
     } else {
