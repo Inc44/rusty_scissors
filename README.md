@@ -29,6 +29,14 @@ $ cd rusty-scissors
 $ cargo run --release <input-path>
 ```
 
+## How Does It Work? 🔎
+
+Rusty Scissors scans each row and column of pixels, checking for similarities within a specified tolerance.
+
+If you're processing noisy images with slightly varying pixel values, you can set a tolerance value of `13.725` to account for this noise. If the default behavior (a tolerance value of `0`) works well for your images, there's no need to adjust the tolerance.
+
+Currently, Rusty Scissors does not use the Delta E 2000 metric for color similarity, as it would significantly impact performance due to the complex calculations involved. Instead, a simpler pixel difference approach is used to prioritize speed.
+
 ## Contribution 🤝
 We welcome contributions! For significant changes, please open an issue for discussion before making a pull request.
 
