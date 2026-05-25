@@ -1,51 +1,48 @@
-use rusty_scissors::{process_directory, AppError};
-use std::env;
+use clap::Parser;
+use rusty_scissors::process_images;
 use std::path::PathBuf;
 use std::process;
-
-fn parse_args() -> Result<(PathBuf, bool, bool, f32), AppError> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 || args.len() > 5 {
-        return Err(AppError {
-            message: format!(
-                "Usage: {} <input-path> [--override] [--keep] [--tolerance=<percentage>]",
-                args[0]
-            ),
-        });
-    }
-    let override_flag = args.contains(&"--override".to_string());
-    let keep_flag = args.contains(&"--keep".to_string());
-
-    let tolerance_percent =
-        if let Some(tolerance_arg) = args.iter().find(|arg| arg.starts_with("--tolerance=")) {
-            tolerance_arg["--tolerance=".len()..]
-                .parse()
-                .map_err(|_| AppError {
-                    message: format!("Invalid tolerance value: {}", tolerance_arg),
-                })?
-        } else {
-            0.0
-        };
-
-    Ok((
-        PathBuf::from(&args[1]),
-        override_flag,
-        keep_flag,
-        tolerance_percent,
-    ))
+#[derive(Parser)]
+#[command(
+    version,
+    about = "A command-line tool for trimming images.",
+    long_about = "Rusty Scissors is a useful tool created with ❤️ using Rust. It quickly trims extra space around images like smart scissors. It's fast, efficient, and precise.",
+    override_usage = "rusty_scissors <input_paths>... [options]"
+)]
+struct Cli {
+    /// Paths to the input images or directories (required)
+    #[arg(value_name = "input_paths", required = true)]
+    input_paths: Vec<PathBuf>,
+    /// Override the input image instead of creating a new one
+    #[arg(short, long = "override")]
+    override_flag: bool,
+    /// Keep modification time
+    #[arg(short, long = "keep")]
+    keep_flag: bool,
+    /// Set pixel similarity tolerance (default: 0)
+    #[arg(
+        short,
+        long = "tolerance",
+        default_value_t = 0.0,
+        value_name = "percentage"
+    )]
+    tolerance_percent: f32,
 }
-
 fn main() {
-    match parse_args() {
-        Ok((path, override_flag, keep_flag, tolerance_percent)) => {
-            if let Err(e) = process_directory(&path, override_flag, keep_flag, tolerance_percent) {
-                eprintln!("{}", e);
-                process::exit(1);
-            }
+    let cli = Cli::parse();
+    let mut has_errors = false;
+    for path in &cli.input_paths {
+        if let Err(error) = process_images(
+            path,
+            cli.override_flag,
+            cli.keep_flag,
+            cli.tolerance_percent,
+        ) {
+            eprintln!("{}", error);
+            has_errors = true;
         }
-        Err(e) => {
-            eprintln!("{}", e);
-            process::exit(1);
-        }
+    }
+    if has_errors {
+        process::exit(1);
     }
 }

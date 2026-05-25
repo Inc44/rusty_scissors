@@ -1,12 +1,18 @@
 [package]
 name = "rusty_scissors"
-version = "1.3.0"
+version = "2026.5.25"
+authors = ["Inc44"]
 edition = "2021"
+rust-version = "1.80"
 description = "A command-line tool for trimming images."
+readme = "README.md"
+repository = "https://github.com/Inc44/rusty_scissors"
 license = "MIT"
+keywords = ["image-processing", "image-optimization", "batch-processing"]
 
 [dependencies]
-image = "0.25.1"
-walkdir = "2.5.0"
-rayon = "1.10.0"
-filetime = "0.2.23"
+clap = { version = "4", features = ["derive"] }
+filetime = "0.2"
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "qoi", "tga", "webp"] }
+rayon = "1.12"
+walkdir = "2"
