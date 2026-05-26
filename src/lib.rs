@@ -1,60 +1,91 @@
 use image::{DynamicImage, GenericImageView, Rgba};
+use palette::color_difference::{Ciede2000, EuclideanDistance};
+use palette::{IntoColor, Lab, Srgb};
 use rayon::prelude::*;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
 use walkdir::WalkDir;
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DeltaMethod {
+    E76,
+    E2000,
+}
 fn all_same(
     image: &DynamicImage,
     row: u32,
     col: u32,
     is_row: bool,
-    tolerance_percent: f32,
+    tolerance: f32,
+    alpha_flag: bool,
+    delta: Option<DeltaMethod>,
 ) -> bool {
     let value = image.get_pixel(col, row);
-    let tolerance = (255.0 * tolerance_percent / 100.0) as u8; // Convert tolerance percentage to u8
     if is_row {
         (0..image.width()).all(|x| {
             let pixel = image.get_pixel(x, row);
-            pixel_similarity(value, pixel, tolerance)
+            pixel_similarity(value, pixel, tolerance, alpha_flag, delta)
         })
     } else {
         (0..image.height()).all(|y| {
             let pixel = image.get_pixel(col, y);
-            pixel_similarity(value, pixel, tolerance)
+            pixel_similarity(value, pixel, tolerance, alpha_flag, delta)
         })
     }
 }
-fn pixel_similarity(pixel1: Rgba<u8>, pixel2: Rgba<u8>, tolerance: u8) -> bool {
-    (pixel1[0] as i16 - pixel2[0] as i16).abs() as u8 <= tolerance
-        && (pixel1[1] as i16 - pixel2[1] as i16).abs() as u8 <= tolerance
-        && (pixel1[2] as i16 - pixel2[2] as i16).abs() as u8 <= tolerance
-        && (pixel1[3] as i16 - pixel2[3] as i16).abs() as u8 <= tolerance
+fn pixel_similarity(
+    pixel1: Rgba<u8>,
+    pixel2: Rgba<u8>,
+    tolerance: f32,
+    alpha_flag: bool,
+    delta: Option<DeltaMethod>,
+) -> bool {
+    let to_lab = |pixel: Rgba<u8>| -> Lab {
+        Srgb::new(pixel[0], pixel[1], pixel[2])
+            .into_format::<f32>()
+            .into_color()
+    };
+    match delta {
+        Some(DeltaMethod::E76) => to_lab(pixel1).distance(to_lab(pixel2)) <= tolerance,
+        Some(DeltaMethod::E2000) => to_lab(pixel1).difference(to_lab(pixel2)) <= tolerance,
+        _ => {
+            (pixel1[0] as f32 - pixel2[0] as f32).abs() <= tolerance
+                && (pixel1[1] as f32 - pixel2[1] as f32).abs() <= tolerance
+                && (pixel1[2] as f32 - pixel2[2] as f32).abs() <= tolerance
+                && (!alpha_flag || (pixel1[3] as f32 - pixel2[3] as f32).abs() <= tolerance)
+        }
+    }
 }
 pub fn process_image(
     input_path: &Path,
     override_flag: bool,
     keep_flag: bool,
-    tolerance_percent: f32,
+    tolerance: f32,
+    alpha_flag: bool,
+    delta: Option<DeltaMethod>,
 ) -> Result<(), Box<dyn Error>> {
     let mut img = image::open(input_path)?;
+    if img.width() == 0 || img.height() == 0 {
+        return Ok(());
+    }
     let mut modified_date = SystemTime::now();
     if keep_flag {
         let metadata = fs::metadata(input_path)?;
         modified_date = metadata.modified()?;
     }
     let (mut left, mut right, mut top, mut bottom) = (0, img.width() - 1, 0, img.height() - 1);
-    while top <= bottom && all_same(&img, top, 0, true, tolerance_percent) {
+    while top <= bottom && all_same(&img, top, 0, true, tolerance, alpha_flag, delta) {
         top += 1;
     }
-    while bottom >= top && all_same(&img, bottom, 0, true, tolerance_percent) {
+    while bottom >= top && all_same(&img, bottom, 0, true, tolerance, alpha_flag, delta) {
         bottom -= 1;
     }
-    while left <= right && all_same(&img, 0, left, false, tolerance_percent) {
+    while left <= right && all_same(&img, 0, left, false, tolerance, alpha_flag, delta) {
         left += 1;
     }
-    while right >= left && all_same(&img, 0, right, false, tolerance_percent) {
+    while right >= left && all_same(&img, 0, right, false, tolerance, alpha_flag, delta) {
         right -= 1;
     }
     let output_path = build_output_path(input_path, override_flag)?;
@@ -119,19 +150,36 @@ pub fn process_images(
     input_path: &Path,
     override_flag: bool,
     keep_flag: bool,
-    tolerance_percent: f32,
+    tolerance: f32,
+    alpha_flag: bool,
+    delta: Option<DeltaMethod>,
 ) -> Result<(), Box<dyn Error>> {
     if input_path.is_file() {
-        if let Err(error) = process_image(input_path, override_flag, keep_flag, tolerance_percent) {
+        if let Err(error) = process_image(
+            input_path,
+            override_flag,
+            keep_flag,
+            tolerance,
+            alpha_flag,
+            delta,
+        ) {
             eprintln!("Failed to process {}: {}", input_path.display(), error);
+            return Err("".into());
         }
         return Ok(());
     }
     let paths = collect_paths(input_path)?;
+    let has_errors = AtomicBool::new(false);
     paths.par_iter().for_each(|path| {
-        if let Err(error) = process_image(path, override_flag, keep_flag, tolerance_percent) {
+        if let Err(error) =
+            process_image(path, override_flag, keep_flag, tolerance, alpha_flag, delta)
+        {
             eprintln!("Failed to process {}: {}", path.display(), error);
+            has_errors.store(true, Ordering::Relaxed);
         }
     });
+    if has_errors.load(Ordering::Relaxed) {
+        return Err("".into());
+    }
     Ok(())
 }

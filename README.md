@@ -25,9 +25,15 @@ Rusty Scissors is a useful tool created with ❤️ using Rust. It quickly trims
 
 Rusty Scissors scans each row and column of pixels, checking for similarities within a specified tolerance.
 
-If you're processing noisy images with slightly varying pixel values, you can set a tolerance value of `13.725` to account for this noise. If the default behavior (a tolerance value of `0`) works well for your images, there's no need to adjust the tolerance.
+If you're processing noisy images with slightly varying pixel values, you can set a tolerance value of `35` to account for this noise. If the default behavior (a tolerance value of `0`) works well for your images, there's no need to adjust the tolerance.
 
-Currently, Rusty Scissors does not use the Delta E 2000 metric for color similarity, as it would significantly impact performance due to the complex calculations involved. Instead, a simpler pixel difference approach is used to prioritize speed.
+When using the `--delta` flag, you may have to adjust the tolerance to `2`. Using `--delta` with default tolerance may be considered a waste of resources, as the Delta E 2000 metric for color similarity would significantly impact performance due to the complex calculations involved. Instead, a simpler pixel difference approach should be used to prioritize speed.
+
+Due to the algorithm's edge-inward scanning design, some images may not be trimmed at all even when trimming is visually possible. For example, images that consist of bars of different colors.
+
+If an image is completely uniform and trimmed down to nothing, the original file is copied to the output path to prevent data loss and avoid creating invalid empty images.
+
+Input images with zero width or height (0x0) are skipped entirely, as according to image standards supported by this tool, they are not valid images by definition. They are not copied and the `--keep` option does not apply to them since no file operations are performed.
 
 ## 🚀 Installation from crates.io
 
@@ -63,12 +69,14 @@ rusty_scissors <input_paths>... [options]
 
 ## 🎨 Command-Line Arguments
 
-| Argument                   | Description                                            |
-|----------------------------|--------------------------------------------------------|
-| `<input_paths>`            | Paths to the input images or directories (required)    |
-| `--override`               | Override the input image instead of creating a new one |
-| `--keep`                   | Keep modification time                                 |
-| `--tolerance <percentage>` | Set pixel similarity tolerance (default: 0)            |
+| Argument                  | Description                                            |
+|---------------------------|--------------------------------------------------------|
+| `<input_paths>`           | Paths to the input images or directories (required)    |
+| `-o, --override`          | Override the input image instead of creating a new one |
+| `-k, --keep`              | Keep modification time                                 |
+| `-t, --tolerance <value>` | Set pixel similarity tolerance (default: 0)            |
+| `-a, --alpha`             | Process alpha channel                                  |
+| `-d, --delta <method>`    | Use Delta E instead of RGB difference (E76 or E2000)   |
 
 ## 🐛 Bugs
 
@@ -86,6 +94,7 @@ Creators of:
 - [clap](https://github.com/clap-rs/clap)
 - [filetime](https://github.com/alexcrichton/filetime)
 - [Image](https://github.com/image-rs/image)
+- [palette](https://github.com/Ogeon/palette)
 - [Rayon](https://github.com/rayon-rs/rayon)
 - [walkdir](https://github.com/BurntSushi/walkdir)
 

@@ -1,6 +1,6 @@
 [package]
 name = "rusty_scissors"
-version = "2026.5.25"
+version = "2026.5.26"
 authors = ["Inc44"]
 edition = "2021"
 rust-version = "1.80"
@@ -14,5 +14,6 @@ keywords = ["image-processing", "image-optimization", "batch-processing"]
 clap = { version = "4", features = ["derive"] }
 filetime = "0.2"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "qoi", "tga", "webp"] }
+palette = "0.7"
 rayon = "1.12"
 walkdir = "2"
