@@ -32,20 +32,17 @@ struct Cli {
     #[arg(short, long = "alpha", conflicts_with = "delta")]
     alpha_flag: bool,
     /// Use Delta E instead of RGB difference (E76 or E2000)
-    #[arg(short, long = "delta", value_name = "method")]
-    delta: Option<String>,
+    #[arg(
+        short,
+        long,
+        value_name = "method",
+        conflicts_with = "alpha",
+        hide_possible_values = true
+    )]
+    delta: Option<DeltaMethod>,
 }
 fn main() {
     let cli = Cli::parse();
-    let delta_method = match cli.delta.as_deref() {
-        Some("E76") => Some(DeltaMethod::E76),
-        Some("E2000") => Some(DeltaMethod::E2000),
-        Some(other) => {
-            eprintln!("Invalid delta method: {}. Expected 'E76' or 'E2000'", other);
-            process::exit(1);
-        }
-        _ => None,
-    };
     let mut has_errors = false;
     for path in &cli.input_paths {
         if process_images(
@@ -54,7 +51,7 @@ fn main() {
             cli.keep_flag,
             cli.tolerance,
             cli.alpha_flag,
-            delta_method,
+            cli.delta,
         )
         .is_err()
         {

@@ -1,6 +1,6 @@
 [package]
 name = "rusty_scissors"
-version = "2026.5.26"
+version = "2026.5.27"
 authors = ["Inc44"]
 edition = "2021"
 rust-version = "1.80"
